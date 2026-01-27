@@ -1,3 +1,11 @@
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Enum, Text
+from sqlalchemy.dialects.postgresql import UUID
+from datetime import datetime
+from uuid import uuid4
+from app.db.base import Base
+from app.core.enum import JobType, JobStatus
+
+
 class ProcessingJob(Base):
     __tablename__ = "processing_jobs"
 
