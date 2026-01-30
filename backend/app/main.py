@@ -48,9 +48,20 @@ def health_check():
 
 @app.get('/health')
 def detailed_health_check():
+    from sqlalchemy import text
+    from app.db.session import engine
+    
+    db_status = 'disconnected'
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            db_status = 'connected'
+    except Exception as e:
+        db_status = f'error: {str(e)}'
+    
     return {
-        'status': 'healthy',
+        'status': 'healthy' if db_status == 'connected' else 'degraded',
         'service': settings.PROJECT_NAME,
         'version': settings.VERSION,
-        'database': 'connected'
+        'database': db_status
     }
