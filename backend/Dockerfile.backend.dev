@@ -1,0 +1,25 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+# Ensure that python output is sent straight to terminal 
+ENV PYTHONUNBUFFERED=1 
+
+# Update the package list and install gcc because some python packages
+# written in C need to be compiled during installation.
+# Also install postgresql-client for database management.
+# Finally, clean up the apt cache to reduce image size.
+RUN apt-get update && apt-get install -y \
+  gcc \
+  postgresql-client \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy the requirements file from the current directory to the working directory
+# in the container and install the Python dependencies listed in it.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire project directory to the working directory in the container
+COPY . .
+
+# Command to run the FastAPI application using Uvicorn with auto-reload enabled
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -1,0 +1,88 @@
+# Docker Compose file version
+# Define all containers (services) that will run together
+services:
+
+  # =========================
+  # Backend Service (FastAPI)
+  # =========================
+  backend:
+    # Build the backend image using a custom Dockerfile
+    build:
+      # Directory Docker will use as build context
+      # Docker can ONLY access files inside this directory
+      context: ../backend
+
+      # Explicitly specify which Dockerfile to use
+      dockerfile: Dockerfile.backend.dev
+
+    # Map container port 8000 to host port 8000
+    # host:container
+    ports:
+      - "8000:8000"
+
+    # Mount local backend source code into container
+    # This enables hot reload during development
+    volumes:
+      - ../backend:/app
+
+    # Load environment variables from .env file
+    # Keeps secrets and config outside code
+    env_file:
+      - ../.env
+
+    # Ensure database container starts before backend
+    # NOTE: This does NOT wait for DB to be ready
+    depends_on:
+      - db
+
+  # =========================
+  # Frontend Service (Vue + Vite)
+  # =========================
+  frontend:
+    # Build frontend image using its Dockerfile
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.frontend.dev
+
+    # Expose Vite dev server
+    ports:
+      - "5173:5173"
+
+    # Mount frontend source code into container
+    # Enables instant UI updates (hot reload)
+    volumes:
+      - ../frontend:/app
+
+    # Environment variables for frontend
+    # VITE_ prefix is REQUIRED for Vite to expose variables
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+
+  # =========================
+  # Database Service (Postgres)
+  # =========================
+  db:
+    # Use official PostgreSQL image
+    image: postgres:15
+
+    # Database configuration
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+
+    # Expose DB port (optional, useful for local tools)
+    ports:
+      - "5432:5432"
+
+    # Persist database data using named volume
+    # Data survives container restarts
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+# =========================
+# Named Volumes
+# =========================
+volumes:
+  # Volume for Postgres data persistence
+  pgdata:
